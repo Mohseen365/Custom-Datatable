@@ -1,3 +1,10 @@
 <template>
-    
+    <lightning-card title="Data Table">
+        <template if:true={data}>
+            <c-data-table records={data} columns={columns}></c-data-table>
+        </template>
+        <template if:true={error}>
+            <p class="slds-text-color_error slds-var-p-around_small">Error: {error}</p>
+        </template>
+    </lightning-card>
 </template>

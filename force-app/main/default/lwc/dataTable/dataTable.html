@@ -1,0 +1,18 @@
+<template>
+     <!-- No Records Message -->
+     <template if:true={noData}>
+        <p class="slds-text-align_center slds-text-color_weak slds-var-m-vertical_medium">
+            No records found
+        </p>
+    </template>
+
+    <!-- Only show datatable if records exist -->
+    <template if:false={noData}>
+        <lightning-datatable
+            key-field="Id"
+            data={records}
+            columns={columns}
+            hide-checkbox-column>
+        </lightning-datatable>
+    </template>
+</template>
