@@ -1,18 +1,47 @@
 <template>
-     <!-- No Records Message -->
-     <template if:true={noData}>
-        <p class="slds-text-align_center slds-text-color_weak slds-var-m-vertical_medium">
-            No records found
-        </p>
-    </template>
+    <div class="slds-p-around_medium">
+        <lightning-input
+            type="search"
+            label="Search"
+            value={searchTerm}
+            onchange={handleSearch}
+            placeholder="Search records..."
+            class="slds-m-bottom_small">
+        </lightning-input>
 
-    <!-- Only show datatable if records exist -->
-    <template if:false={noData}>
-        <lightning-datatable
-            key-field="Id"
-            data={records}
-            columns={columns}
-            hide-checkbox-column>
-        </lightning-datatable>
-    </template>
+        <!-- No Records Message -->
+        <template if:true={noData}>
+            <p class="slds-text-align_center slds-text-color_weak slds-var-m-vertical_medium">
+                No records found
+            </p>
+        </template>
+
+        <!-- Only show datatable if records exist -->
+        <template if:false={noData}>
+            <lightning-datatable
+                key-field="Id"
+                data={visibleRecords}
+                columns={columns}
+                hide-checkbox-column>
+            </lightning-datatable>
+
+            <div class="slds-m-top_small slds-align_absolute-center">
+                <lightning-button
+                    label="Previous"
+                    onclick={handlePrevious}
+                    disabled={disablePrevious}
+                    class="slds-m-right_x-small">
+                </lightning-button>
+
+                <span>{pageInfo}</span>
+
+                <lightning-button
+                    label="Next"
+                    onclick={handleNext}
+                    disabled={disableNext}
+                    class="slds-m-left_x-small">
+                </lightning-button>
+            </div>
+        </template>
+    </div>
 </template>
