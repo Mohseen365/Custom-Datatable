@@ -6,12 +6,21 @@ export default class DataTable extends LightningElement {
 
     @track filteredRecords = [];
     @track visibleRecords = [];
+    @track draftValues = [];
     searchTerm = '';
     currentPage = 1;
     totalPages = 0;
     noData = false;
 
     pageSize = 10;
+
+    @api
+    refreshTable(data) {
+        this.records = data;
+        this.filteredRecords = [...data];
+        this.currentPage = 1;
+        this.setPagination();
+    }
 
     connectedCallback() {
         if (this.records) {
@@ -77,5 +86,40 @@ export default class DataTable extends LightningElement {
 
     get pageInfo() {
         return `Page ${this.currentPage} of ${this.totalPages}`;
+    }
+
+    // INLINE SAVE HANDLER
+    async handleSave(event) {
+        const draftValues = event.detail.draftValues;
+
+        try {
+            const updatePromises = draftValues.map(record => {
+                return updateRecord({ fields: { ...record } });
+            });
+
+            await Promise.all(updatePromises);
+
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Success',
+                    message: 'Records updated successfully',
+                    variant: 'success'
+                })
+            );
+
+            this.draftValues = [];
+
+            // Notify parent to refresh Apex
+            this.dispatchEvent(new CustomEvent('refreshdata'));
+
+        } catch (error) {
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Error',
+                    message: error.body?.message || 'Update failed',
+                    variant: 'error'
+                })
+            );
+        }
     }
 }

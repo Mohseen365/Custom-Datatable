@@ -1,15 +1,18 @@
-import { LightningElement, wire } from 'lwc';
+import { LightningElement, wire, track } from 'lwc';
 import getDynamicData from '@salesforce/apex/DynamicDataTableController.getDynamicData';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { refreshApex } from '@salesforce/apex';
 
 export default class DataWrapper extends LightningElement {
-    data;
-    columns;
-    error;
+    @track data;
+    @track columns;
+    @track error;
+
+    wiredResult;
 
     request = {
         objectName: 'Account',
-        fields: ['Name', 'Industry', 'Phone'],
+        fields: ['Id', 'Name', 'Industry', 'Phone'],
         whereClause: '',
         limitSize: 20
     };
@@ -20,38 +23,37 @@ export default class DataWrapper extends LightningElement {
     }
 
     @wire(getDynamicData, { request: '$jsonRequest' })
-    wiredData({ data, error }) {
-        if (data) {
-            this.columns = data.columns;
-            this.data = data.rows;
+    wiredData(result) {
+        this.wiredResult = result;
+
+        if (result.data) {
+            this.columns = result.data.columns.map(col => ({
+                ...col,
+                editable: true 
+            }));
+
+            this.data = result.data.rows;
             this.error = undefined;
 
-            // Success toast when data fetched
-            this.showToast('Success', 'Data fetched successfully', 'success');
-
-            // If no records found, show info toast
-            if (!this.data || this.data.length === 0) {
-                this.showToast('No Records Found', 'No matching records were found.', 'info');
-            }
-        } else if (error) {
-            this.error = error;
+        } else if (result.error) {
+            this.error = result.error;
             this.data = undefined;
-            this.columns = undefined;
-
-            console.error('Error fetching data', error);
-
-            // Error toast
-            this.showToast('Error', 'Failed to fetch data. Check console for details.', 'error');
         }
     }
 
-    showToast(title, message, variant) {
-        const event = new ShowToastEvent({
-            title,
-            message,
-            variant,
-            mode: 'dismissable'
-        });
-        this.dispatchEvent(event);
+    async refreshData() {
+        await refreshApex(this.wiredResult);
+
+        const child = this.template.querySelector('c-data-table');
+        if (child) {
+            child.refreshTable(this.data);
+        }
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: 'Refreshed',
+                message: 'Data refreshed successfully',
+                variant: 'success'
+            })
+        );
     }
 }

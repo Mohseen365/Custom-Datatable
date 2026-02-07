@@ -22,6 +22,8 @@
                 key-field="Id"
                 data={visibleRecords}
                 columns={columns}
+                draft-values={draftValues}
+                onsave={handleSave}
                 hide-checkbox-column>
             </lightning-datatable>
 
@@ -33,7 +35,7 @@
                     class="slds-m-right_x-small">
                 </lightning-button>
 
-                <span>{pageInfo}</span>
+                <span class="slds-m-horizontal_small">{pageInfo}</span>
 
                 <lightning-button
                     label="Next"
