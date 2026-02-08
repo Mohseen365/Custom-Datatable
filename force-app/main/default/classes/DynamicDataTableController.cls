@@ -69,6 +69,10 @@ public with sharing class DynamicDataTableController {
             throw new AuraHandledException('No valid fields found for ' + parsedRequest.objectName);
         }
 
+        if (!validFields.contains('Id')) {
+            validFields.add('Id');
+        }
+        
         String soql = 'SELECT ' + String.join(validFields, ',') + ' FROM ' + parsedRequest.objectName + ' WITH SECURITY_ENFORCED';
 
         if (!String.isBlank(parsedRequest.whereClause)) {
