@@ -9,11 +9,13 @@ export default class DataTable extends LightningElement {
     @track filteredRecords = [];
     @track visibleRecords = [];
     @track draftValues = [];
+    @track editRecord = {};
+    @track editFields = [];
     searchTerm = '';
     currentPage = 1;
     totalPages = 0;
     noData = false;
-
+    showModal = false;
     pageSize = 10;
 
     @api
@@ -30,7 +32,33 @@ export default class DataTable extends LightningElement {
             this.setPagination();
         }
     }
+    get disablePrevious() {
+        return this.currentPage <= 1;
+    }
 
+    get disableNext() {
+        return this.currentPage >= this.totalPages;
+    }
+
+    get pageInfo() {
+        return `Page ${this.currentPage} of ${this.totalPages}`;
+    }
+
+    get computedColumns() {
+        return [
+            ...this.columns,
+            {
+                type: 'action',
+                typeAttributes: {
+                    rowActions: [
+                        { label: 'View', name: 'view' },
+                        { label: 'Edit', name: 'edit' },
+                        { label: 'Delete', name: 'delete' }
+                    ]
+                }
+            }
+        ];
+    }
     // Search
     handleSearch(event) {
         this.searchTerm = event.target.value.toLowerCase();
@@ -48,21 +76,6 @@ export default class DataTable extends LightningElement {
         this.setPagination();
     }
 
-    // Pagination logic
-    setPagination() {
-        this.totalPages = Math.ceil(this.filteredRecords.length / this.pageSize);
-
-        // Set noData flag if empty
-        this.noData = this.filteredRecords.length === 0;
-
-        this.updateVisibleRecords();
-    }
-
-    updateVisibleRecords() {
-        const start = (this.currentPage - 1) * this.pageSize;
-        const end = start + this.pageSize;
-        this.visibleRecords = this.filteredRecords.slice(start, end);
-    }
 
     handleNext() {
         if (this.currentPage < this.totalPages) {
@@ -78,18 +91,79 @@ export default class DataTable extends LightningElement {
         }
     }
 
-    get disablePrevious() {
-        return this.currentPage <= 1;
+    handleRowAction(event) {
+        const action = event.detail.action.name;
+        const row = event.detail.row;
+        console.log('row -> ', row);
+    
+        if (action === 'edit') {
+            this.openEditModal(row);
+        }
+    
+        if (action === 'delete') {
+            this.handleDelete(row.Id);
+        }
+    }
+    
+    handleFieldChange(event) {
+        const field = event.target.dataset.field;
+        const value = event.target.value;
+        console.log('field -> ', field);
+        console.log('value -> ', value);
+            
+        this.editRecord = {
+            ...this.editRecord,
+            [field]: value
+        };
+    
+        this.editFields = this.editFields.map(f => {
+            if (f.fieldName === field) {
+                return { ...f, value };
+            }
+            return f;
+        });
+
+        
+        console.log('editFields -> ', this.editFields);
+    } 
+
+    openEditModal(row) {
+        this.editRecord = { ...row };
+        this.editFields = this.columns
+            .filter(col => col.editable) 
+            .map(col => {
+                return {
+                    fieldName: col.fieldName,
+                    label: col.label,
+                    value: row[col.fieldName] 
+                };
+            });
+        this.showModal = true;
+    }
+    
+    closeModal() {
+        this.showModal = false;
+        this.editFields = [];
+        this.editRecord = {};
     }
 
-    get disableNext() {
-        return this.currentPage >= this.totalPages;
+    // Pagination logic
+    setPagination() {
+        this.totalPages = Math.ceil(this.filteredRecords.length / this.pageSize);
+
+        // Set noData flag if empty
+        this.noData = this.filteredRecords.length === 0;
+
+        this.updateVisibleRecords();
     }
 
-    get pageInfo() {
-        return `Page ${this.currentPage} of ${this.totalPages}`;
-    }
+    updateVisibleRecords() {
+        const start = (this.currentPage - 1) * this.pageSize;
+        const end = start + this.pageSize;
+        this.visibleRecords = this.filteredRecords.slice(start, end);
+    }   
 
+    
     // INLINE SAVE HANDLER
     async handleSave(event) {
         const draftValues = event.detail.draftValues;
@@ -124,4 +198,31 @@ export default class DataTable extends LightningElement {
             );
         }
     }
+
+    async saveModal() {
+        try {
+            await updateRecord({ fields: this.editRecord });
+    
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Updated',
+                    message: 'Record updated successfully',
+                    variant: 'success'
+                })
+            );
+    
+            this.showModal = false;
+            this.dispatchEvent(new CustomEvent('refreshdata'));
+    
+        } catch (error) {
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Error',
+                    message: error.body?.message || 'Save failed',
+                    variant: 'error'
+                })
+            );
+        }
+    }
+    
 }
