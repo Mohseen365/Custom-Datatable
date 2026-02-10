@@ -4,7 +4,8 @@
             <c-data-table 
                 records={data} 
                 columns={columns}
-                onrefreshdata={refreshData}>
+                onrefreshdata={refreshData}
+                oncreaterecord={handleCreate}>
             </c-data-table>
         </template>
         <template if:true={error}>

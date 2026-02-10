@@ -1,5 +1,6 @@
 import { LightningElement, wire, track } from 'lwc';
 import getDynamicData from '@salesforce/apex/DynamicDataTableController.getDynamicData';
+import insertRecord from '@salesforce/apex/DynamicDataTableController.insertRecord';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { refreshApex } from '@salesforce/apex';
 
@@ -41,6 +42,13 @@ export default class DataWrapper extends LightningElement {
         }
     }
 
+    handleCreate(event) {
+        insertRecord({
+            objectName: this.request.objectName,
+            fields: event.detail
+        })
+        .then(() => this.refreshData());
+    }
     async refreshData() {
         await refreshApex(this.wiredResult);
 

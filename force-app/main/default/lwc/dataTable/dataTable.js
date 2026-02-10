@@ -11,12 +11,14 @@ export default class DataTable extends LightningElement {
     @track draftValues = [];
     @track editRecord = {};
     @track editFields = [];
+    @track newRecord = {};
     searchTerm = '';
     currentPage = 1;
     totalPages = 0;
     noData = false;
     showModal = false;
     pageSize = 10;
+    showCreateModal = false;
 
     @api
     refreshTable(data) {
@@ -94,6 +96,7 @@ export default class DataTable extends LightningElement {
     handleRowAction(event) {
         const action = event.detail.action.name;
         const row = event.detail.row;
+        
         console.log('row -> ', row);
     
         if (action === 'edit') {
@@ -127,6 +130,12 @@ export default class DataTable extends LightningElement {
         console.log('editFields -> ', this.editFields);
     } 
 
+    handleCreateFieldChange(event) {
+        const field = event.target.dataset.field;
+        this.newRecord[field] = event.target.value;
+    }
+    
+
     openEditModal(row) {
         this.editRecord = { ...row };
         this.editFields = this.columns
@@ -147,6 +156,22 @@ export default class DataTable extends LightningElement {
         this.editRecord = {};
     }
 
+    openNewModal() {
+        this.newRecord = {};
+        this.editFields = this.columns;
+        this.showCreateModal = true;
+    }
+    
+    closeCreateModal() {
+        this.showCreateModal = false;
+    }
+
+    saveNewRecord() {
+        this.dispatchEvent(
+            new CustomEvent('createrecord', { detail: this.newRecord })
+        );
+        this.showCreateModal = false;
+    }
     // Pagination logic
     setPagination() {
         this.totalPages = Math.ceil(this.filteredRecords.length / this.pageSize);

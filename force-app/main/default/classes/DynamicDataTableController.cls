@@ -105,6 +105,15 @@ public with sharing class DynamicDataTableController {
         return response;
     }
 
+    @AuraEnabled
+    public static Id insertRecord(String objectName, Map<String, Object> fields) {
+        SObject obj = Schema.getGlobalDescribe().get(objectName).newSObject();
+        for (String key : fields.keySet()) {
+            obj.put(key, fields.get(key));
+        }
+        insert obj;
+        return obj.Id;
+    }
     private static String getLwcFieldType(Schema.DescribeFieldResult fieldDescribe) {
         Schema.DisplayType fieldType = fieldDescribe.getType();
 

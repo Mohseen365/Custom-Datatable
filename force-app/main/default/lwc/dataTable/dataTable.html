@@ -48,6 +48,42 @@
                 <div class="slds-backdrop slds-backdrop_open"></div>
             </template>
             
+            <lightning-button 
+                label="New Record" 
+                variant="brand" 
+                onclick={openNewModal}
+                class="slds-m-bottom_small">
+            </lightning-button>
+            
+            <template if:true={showCreateModal}>
+                <section role="dialog" class="slds-modal slds-fade-in-open">
+                    <div class="slds-modal__container">
+            
+                        <header class="slds-modal__header">
+                            <h2>Create Record</h2>
+                        </header>
+            
+                        <div class="slds-modal__content slds-p-around_medium">
+                            <template for:each={editFields} for:item="field">
+                                <lightning-input 
+                                    key={field.fieldName}
+                                    label={field.label}
+                                    onchange={handleCreateFieldChange}
+                                    data-field={field.fieldName}>
+                                </lightning-input>
+                            </template>
+                        </div>
+            
+                        <footer class="slds-modal__footer">
+                            <lightning-button label="Cancel" onclick={closeCreateModal}></lightning-button>
+                            <lightning-button variant="brand" label="Create" onclick={saveNewRecord}></lightning-button>
+                        </footer>
+            
+                    </div>
+                </section>
+                <div class="slds-backdrop slds-backdrop_open"></div>
+            </template>
+            
             <lightning-datatable
                 key-field="Id"
                 data={visibleRecords}
