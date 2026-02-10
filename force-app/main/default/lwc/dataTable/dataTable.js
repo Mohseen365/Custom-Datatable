@@ -135,7 +135,14 @@ export default class DataTable extends LightningElement {
         this.newRecord[field] = event.target.value;
     }
     
-
+    handleDelete(recordId) {
+        if (confirm('Are you sure you want to delete this record?')) {
+            this.dispatchEvent(
+                new CustomEvent('deleterecord', { detail: recordId })
+            );
+        }
+    }
+    
     openEditModal(row) {
         this.editRecord = { ...row };
         this.editFields = this.columns

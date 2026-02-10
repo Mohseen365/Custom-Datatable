@@ -114,6 +114,14 @@ public with sharing class DynamicDataTableController {
         insert obj;
         return obj.Id;
     }
+
+
+    @AuraEnabled
+    public static void deleteRecordById(Id recordId) {
+        if (recordId == null) return;
+
+        delete recordId.getSObjectType().newSObject(recordId);
+    }
     private static String getLwcFieldType(Schema.DescribeFieldResult fieldDescribe) {
         Schema.DisplayType fieldType = fieldDescribe.getType();
 

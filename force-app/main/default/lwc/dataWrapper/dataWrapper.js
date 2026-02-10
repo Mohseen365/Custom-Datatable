@@ -1,6 +1,7 @@
 import { LightningElement, wire, track } from 'lwc';
 import getDynamicData from '@salesforce/apex/DynamicDataTableController.getDynamicData';
 import insertRecord from '@salesforce/apex/DynamicDataTableController.insertRecord';
+import deleteRecordById from '@salesforce/apex/DynamicDataTableController.deleteRecordById';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { refreshApex } from '@salesforce/apex';
 
@@ -49,6 +50,12 @@ export default class DataWrapper extends LightningElement {
         })
         .then(() => this.refreshData());
     }
+    
+    handleDelete(event) {
+        deleteRecordById({ recordId: event.detail })
+            .then(() => this.refreshData());
+    }
+
     async refreshData() {
         await refreshApex(this.wiredResult);
 

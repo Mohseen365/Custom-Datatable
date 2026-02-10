@@ -5,7 +5,8 @@
                 records={data} 
                 columns={columns}
                 onrefreshdata={refreshData}
-                oncreaterecord={handleCreate}>
+                oncreaterecord={handleCreate}
+                ondeleterecord={handleDelete}>
             </c-data-table>
         </template>
         <template if:true={error}>
