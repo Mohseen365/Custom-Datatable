@@ -47,14 +47,46 @@
                 </section>
                 <div class="slds-backdrop slds-backdrop_open"></div>
             </template>
+
+            <div class="slds-box slds-theme_default slds-m-bottom_small">
+
+                <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
             
-            <lightning-button 
-                label="New Record" 
-                variant="brand" 
-                onclick={openNewModal}
-                class="slds-m-bottom_small">
-            </lightning-button>
+                    <div>
+                        <lightning-button 
+                            label="Bulk Edit"
+                            icon-name="utility:edit"
+                            onclick={openBulkModal}
+                            disabled={disableBulk}>
+                        </lightning-button>
+                    </div>
             
+                    <div>
+                        <lightning-button 
+                            label="New Record"
+                            variant="brand"
+                            icon-name="utility:add"
+                            onclick={openNewModal}>
+                        </lightning-button>
+                    </div>
+            
+                </div>
+            
+            </div>
+
+            <lightning-datatable
+                key-field="Id"
+                data={visibleRecords}
+                columns={computedColumns}
+                onrowaction={handleRowAction}
+                onrowselection={handleRowSelection}
+                selected-rows={selectedRowIds}
+                draft-values={draftValues}
+                onsave={handleSave}
+                >
+            </lightning-datatable>
+
+             
             <template if:true={showCreateModal}>
                 <section role="dialog" class="slds-modal slds-fade-in-open">
                     <div class="slds-modal__container">
@@ -83,17 +115,37 @@
                 </section>
                 <div class="slds-backdrop slds-backdrop_open"></div>
             </template>
+ 
+        
+            <template if:true={showBulkModal}>
+                <section class="slds-modal slds-fade-in-open">
+                    <div class="slds-modal__container">
             
-            <lightning-datatable
-                key-field="Id"
-                data={visibleRecords}
-                columns={computedColumns}
-                onrowaction={handleRowAction}
-                draft-values={draftValues}
-                onsave={handleSave}
-                hide-checkbox-column>
-            </lightning-datatable>
-
+                        <header class="slds-modal__header">
+                            <h2>Bulk Update Records</h2>
+                        </header>
+            
+                        <div class="slds-modal__content slds-p-around_medium">
+                            <template for:each={editFields} for:item="field">
+                                <lightning-input
+                                    key={field.fieldName}
+                                    label={field.label}
+                                    onchange={handleBulkChange}
+                                    data-field={field.fieldName}>
+                                </lightning-input>
+                            </template>
+                        </div>
+            
+                        <footer class="slds-modal__footer">
+                            <lightning-button label="Cancel" onclick={closeBulkModal}></lightning-button>
+                            <lightning-button variant="brand" label="Apply" onclick={applyBulkUpdate}></lightning-button>
+                        </footer>
+            
+                    </div>
+                </section>
+                <div class="slds-backdrop slds-backdrop_open"></div>
+            </template>
+            
             <div class="slds-m-top_small slds-align_absolute-center">
                 <lightning-button
                     label="Previous"

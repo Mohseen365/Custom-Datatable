@@ -6,7 +6,9 @@
                 columns={columns}
                 onrefreshdata={refreshData}
                 oncreaterecord={handleCreate}
-                ondeleterecord={handleDelete}>
+                ondeleterecord={handleDelete}
+                onbulkupdate={handleBulkUpdate}
+            >
             </c-data-table>
         </template>
         <template if:true={error}>

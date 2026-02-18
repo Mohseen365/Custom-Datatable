@@ -122,6 +122,21 @@ public with sharing class DynamicDataTableController {
 
         delete recordId.getSObjectType().newSObject(recordId);
     }
+    @AuraEnabled
+    public static void bulkUpdate(String objectName, List<Id> recordIds, Map<String, Object> values) {
+        List<SObject> updates = new List<SObject>();
+
+        for (Id recordId : recordIds) {
+            SObject obj = Schema.getGlobalDescribe().get(objectName).newSObject(recordId);
+            for (String field : values.keySet()) {
+                obj.put(field, values.get(field));
+            }
+            updates.add(obj);
+        }
+
+        update updates;
+    }
+
     private static String getLwcFieldType(Schema.DescribeFieldResult fieldDescribe) {
         Schema.DisplayType fieldType = fieldDescribe.getType();
 
@@ -139,4 +154,5 @@ public with sharing class DynamicDataTableController {
             when else       { return 'text'; }
         }
     }
+
 }

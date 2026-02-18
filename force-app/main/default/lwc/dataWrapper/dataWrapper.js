@@ -4,6 +4,7 @@ import insertRecord from '@salesforce/apex/DynamicDataTableController.insertReco
 import deleteRecordById from '@salesforce/apex/DynamicDataTableController.deleteRecordById';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { refreshApex } from '@salesforce/apex';
+import bulkUpdate from '@salesforce/apex/DynamicDataTableController.bulkUpdate';
 
 export default class DataWrapper extends LightningElement {
     @track data;
@@ -43,6 +44,15 @@ export default class DataWrapper extends LightningElement {
         }
     }
 
+    
+    handleBulkUpdate(event) {
+        bulkUpdate({
+            objectName: this.request.objectName,
+            recordIds: event.detail.recordIds,
+            values: event.detail.values
+        })
+        .then(() => this.refreshData());
+    }
     handleCreate(event) {
         insertRecord({
             objectName: this.request.objectName,

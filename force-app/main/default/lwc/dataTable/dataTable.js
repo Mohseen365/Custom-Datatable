@@ -2,6 +2,7 @@ import { LightningElement, api, track } from 'lwc';
 import { updateRecord } from 'lightning/uiRecordApi';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
+
 export default class DataTable extends LightningElement {
     @api records;
     @api columns;
@@ -12,6 +13,10 @@ export default class DataTable extends LightningElement {
     @track editRecord = {};
     @track editFields = [];
     @track newRecord = {};
+    @track selectedRows = [];
+    @track bulkValues = {};
+    @track selectedRowIds = [];
+    showBulkModal = false;
     searchTerm = '';
     currentPage = 1;
     totalPages = 0;
@@ -61,6 +66,46 @@ export default class DataTable extends LightningElement {
             }
         ];
     }
+
+    get disableBulk() {
+        return this.selectedRows.length < 2;
+    }
+
+    
+    handleRowSelection(event) {
+        this.selectedRows = event.detail.selectedRows;
+        this.selectedRowIds = this.selectedRows.map(row => row.Id);
+    }
+    openBulkModal() {
+        this.bulkValues = {};
+        this.editFields = this.columns;
+        this.showBulkModal = true;
+    }
+    
+    closeBulkModal() {
+        this.showBulkModal = false;
+    }
+    
+    handleBulkChange(event) {
+        const field = event.target.dataset.field;
+        this.bulkValues[field] = event.target.value;
+    }
+    
+    applyBulkUpdate() {
+        const payload = {
+            recordIds: this.selectedRows.map(r => r.Id),
+            values: this.bulkValues
+        };
+    
+        this.dispatchEvent(
+            new CustomEvent('bulkupdate', { detail: payload })
+        );
+    
+        this.showBulkModal = false;
+    }
+
+
+    
     // Search
     handleSearch(event) {
         this.searchTerm = event.target.value.toLowerCase();
