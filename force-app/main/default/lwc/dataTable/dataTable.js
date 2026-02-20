@@ -2,10 +2,12 @@ import { LightningElement, api, track } from 'lwc';
 import { updateRecord } from 'lightning/uiRecordApi';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { NavigationMixin } from 'lightning/navigation';
+import saveRecords from '@salesforce/apex/DynamicDataTableController.saveRecords';
 
 export default class DataTable extends NavigationMixin(LightningElement) {
     @api records;
     @api columns;
+    @api objectName;
 
     @track filteredRecords = [];
     @track visibleRecords = [];
@@ -250,7 +252,7 @@ export default class DataTable extends NavigationMixin(LightningElement) {
         );
         this.showCreateModal = false;
     }
-    // Pagination logic
+
     setPagination() {
         this.totalPages = Math.ceil(this.filteredRecords.length / this.pageSize);
 
@@ -266,25 +268,15 @@ export default class DataTable extends NavigationMixin(LightningElement) {
         this.visibleRecords = this.filteredRecords.slice(start, end);
     }   
 
-    
-    // INLINE SAVE HANDLER
+
     async handleSave(event) {
-        const draftValues = event.detail.draftValues;
+        
 
         try {
-            const updatePromises = draftValues.map(record => {
-                return updateRecord({ fields: { ...record } });
+            await saveRecords({
+                objectName: this.objectName,
+                records: event.detail.draftValues
             });
-
-            await Promise.all(updatePromises);
-
-            this.dispatchEvent(
-                new ShowToastEvent({
-                    title: 'Success',
-                    message: 'Records updated successfully',
-                    variant: 'success'
-                })
-            );
 
             this.draftValues = [];
 

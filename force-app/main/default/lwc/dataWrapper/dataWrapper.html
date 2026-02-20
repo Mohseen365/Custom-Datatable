@@ -4,6 +4,7 @@
             <c-data-table 
                 records={data} 
                 columns={columns}
+                object-name={request.objectName}
                 onrefreshdata={refreshData}
                 oncreaterecord={handleCreate}
                 ondeleterecord={handleDelete}

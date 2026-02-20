@@ -155,4 +155,52 @@ public with sharing class DynamicDataTableController {
         }
     }
 
+    @AuraEnabled
+    public static void saveRecords(String objectName, List<Map<String, Object>> records) {
+
+        if (String.isBlank(objectName)) {
+            throw new AuraHandledException('Object name is required.');
+        }
+
+        if (records == null || records.isEmpty()) {
+            throw new AuraHandledException('No records provided.');
+        }
+
+        Map<String, Schema.SObjectType> globalMap = Schema.getGlobalDescribe();
+
+        if (!globalMap.containsKey(objectName)) {
+            throw new AuraHandledException('Invalid object name: ' + objectName);
+        }
+
+        List<SObject> updates = new List<SObject>();
+
+        for (Map<String, Object> rec : records) {
+
+            if (rec == null || !rec.containsKey('Id')) {
+                continue;
+            }
+
+            Id recordId = (Id) rec.get('Id');
+
+            if (recordId == null) {
+                continue;
+            }
+
+            SObject obj = globalMap.get(objectName).newSObject(recordId);
+
+            for (String key : rec.keySet()) {
+                if (key != 'Id' && rec.get(key) != null) {
+                    obj.put(key, rec.get(key));
+                }
+            }
+
+            updates.add(obj);
+        }
+
+        if (!updates.isEmpty()) {
+            update updates;
+        }
+    }
+
+
 }
