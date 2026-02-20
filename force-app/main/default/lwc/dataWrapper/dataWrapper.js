@@ -32,6 +32,7 @@ export default class DataWrapper extends LightningElement {
         if (result.data) {
             this.columns = result.data.columns.map(col => ({
                 ...col,
+                sortable: true,
                 editable: true 
             }));
 

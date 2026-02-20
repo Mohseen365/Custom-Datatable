@@ -16,6 +16,8 @@ export default class DataTable extends LightningElement {
     @track selectedRows = [];
     @track bulkValues = {};
     @track selectedRowIds = [];
+    @track sortedBy;
+    sortDirection = 'asc';
     showBulkModal = false;
     searchTerm = '';
     currentPage = 1;
@@ -71,6 +73,22 @@ export default class DataTable extends LightningElement {
         return this.selectedRows.length < 2;
     }
 
+    handleSort(event) {
+        const { fieldName, sortDirection } = event.detail;
+        this.sortedBy = fieldName;
+        this.sortDirection = sortDirection;
+    
+        this.filteredRecords = [...this.filteredRecords].sort((a, b) => {
+            let v1 = a[fieldName] || '';
+            let v2 = b[fieldName] || '';
+            return sortDirection === 'asc'
+                ? (v1 > v2 ? 1 : -1)
+                : (v1 < v2 ? 1 : -1);
+        });
+    
+        this.currentPage = 1;
+        this.setPagination();
+    }
     
     handleRowSelection(event) {
         this.selectedRows = event.detail.selectedRows;

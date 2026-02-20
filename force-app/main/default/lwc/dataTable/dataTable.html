@@ -55,6 +55,7 @@
                     <div>
                         <lightning-button 
                             label="Bulk Edit"
+                            variant="brand"
                             icon-name="utility:edit"
                             onclick={openBulkModal}
                             disabled={disableBulk}>
@@ -83,6 +84,9 @@
                 selected-rows={selectedRowIds}
                 draft-values={draftValues}
                 onsave={handleSave}
+                sorted-by={sortedBy}
+                sorted-direction={sortDirection}
+                onsort={handleSort}
                 >
             </lightning-datatable>
 
