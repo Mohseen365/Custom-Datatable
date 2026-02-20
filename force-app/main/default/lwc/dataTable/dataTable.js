@@ -1,9 +1,9 @@
 import { LightningElement, api, track } from 'lwc';
 import { updateRecord } from 'lightning/uiRecordApi';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { NavigationMixin } from 'lightning/navigation';
 
-
-export default class DataTable extends LightningElement {
+export default class DataTable extends NavigationMixin(LightningElement) {
     @api records;
     @api columns;
 
@@ -89,7 +89,7 @@ export default class DataTable extends LightningElement {
         this.currentPage = 1;
         this.setPagination();
     }
-    
+
     handleRowSelection(event) {
         this.selectedRows = event.detail.selectedRows;
         this.selectedRowIds = this.selectedRows.map(row => row.Id);
@@ -160,7 +160,15 @@ export default class DataTable extends LightningElement {
         const action = event.detail.action.name;
         const row = event.detail.row;
         
-        console.log('row -> ', row);
+        if (action === 'view') {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: row.Id,
+                actionName: 'view'
+            }
+        });
+    }
     
         if (action === 'edit') {
             this.openEditModal(row);
