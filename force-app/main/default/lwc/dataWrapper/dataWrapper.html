@@ -4,11 +4,12 @@
         <div class="slds-p-around_medium slds-grid slds-wrap slds-gutters">
 
             <div class="slds-col slds-size_1-of-2">
-                <lightning-input
-                    label="Object API Name"
+                <lightning-combobox
+                    label="Select Object"
                     value={objectName}
+                    options={objectOptions}
                     onchange={handleObjectChange}>
-                </lightning-input>
+                </lightning-combobox>
             </div>
 
             <div class="slds-col slds-size_1-of-2">

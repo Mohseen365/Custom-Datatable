@@ -105,6 +105,37 @@ public with sharing class DynamicDataTableController {
         return response;
     }
 
+    public class PicklistOption {
+        @AuraEnabled public String label;
+        @AuraEnabled public String value;
+    
+        public PicklistOption(String label, String value) {
+            this.label = label;
+            this.value = value;
+        }
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static List<PicklistOption> getAllObjects() {
+
+        Map<String, Schema.SObjectType> globalMap = Schema.getGlobalDescribe();
+        List<PicklistOption> objectList = new List<PicklistOption>();
+
+        for (Schema.SObjectType objType : globalMap.values()) {
+
+            Schema.DescribeSObjectResult describe = objType.getDescribe();
+
+            if (describe.isQueryable() && describe.isAccessible()) {
+                objectList.add(
+                    new PicklistOption(describe.getLabel(), describe.getName())
+                );
+            }
+        }
+
+        
+        return objectList;
+    }
+
     @AuraEnabled
     public static Id insertRecord(String objectName, Map<String, Object> fields) {
         SObject obj = Schema.getGlobalDescribe().get(objectName).newSObject();

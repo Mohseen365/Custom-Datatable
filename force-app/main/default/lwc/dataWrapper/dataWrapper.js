@@ -5,6 +5,7 @@ import deleteRecordById from '@salesforce/apex/DynamicDataTableController.delete
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { refreshApex } from '@salesforce/apex';
 import bulkUpdate from '@salesforce/apex/DynamicDataTableController.bulkUpdate';
+import getAllObjects from '@salesforce/apex/DynamicDataTableController.getAllObjects';
 
 export default class DataWrapper extends LightningElement {
     @track data;
@@ -22,6 +23,22 @@ export default class DataWrapper extends LightningElement {
 
     get jsonRequest() {
         return this.request ? JSON.stringify(this.request) : null;
+    }
+
+    @track objectOptions = [];
+
+    @wire(getAllObjects)
+    wiredObjects(result) {
+        console.log('WIRE RESULT:', result);
+
+        if (result.data) {
+            console.log('DATA RECEIVED:', result.data);
+            this.objectOptions = result.data;
+        }
+
+        if (result.error) {
+            console.error('WIRE ERROR:', result.error);
+        }
     }
 
     @wire(getDynamicData, { request: '$jsonRequest' })
