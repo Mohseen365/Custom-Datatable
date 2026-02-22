@@ -1,5 +1,51 @@
 <template>
     <lightning-card title="Data Table">
+
+        <div class="slds-p-around_medium slds-grid slds-wrap slds-gutters">
+
+            <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                    label="Object API Name"
+                    value={objectName}
+                    onchange={handleObjectChange}>
+                </lightning-input>
+            </div>
+
+            <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                    label="Fields (comma separated)"
+                    value={fieldInput}
+                    onchange={handleFieldChange}>
+                </lightning-input>
+            </div>
+
+            <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                    label="Where Clause (Optional)"
+                    value={whereClause}
+                    onchange={handleWhereChange}>
+                </lightning-input>
+            </div>
+            
+            <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                    type="number"
+                    label="Limit"
+                    value={limitSize}
+                    onchange={handleLimitChange}>
+                </lightning-input>
+            </div>
+            
+            <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+                <lightning-button
+                    label="Load Data"
+                    variant="brand"
+                    onclick={loadData}>
+                </lightning-button>
+            </div>
+
+        </div>
+
         <template if:true={data}>
             <c-data-table 
                 records={data} 

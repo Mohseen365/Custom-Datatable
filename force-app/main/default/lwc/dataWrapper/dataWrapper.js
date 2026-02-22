@@ -13,16 +13,15 @@ export default class DataWrapper extends LightningElement {
 
     wiredResult;
 
-    request = {
-        objectName: 'Account',
-        fields: ['Id', 'Name', 'Industry', 'Phone'],
-        whereClause: '',
-        limitSize: 20
-    };
+    objectName = 'Account';
+    fieldInput = 'Name, Industry, Phone';
+    whereClause = '';
+    limitSize = 20;
 
-    // Convert to JSON string for Apex
+    request;
+
     get jsonRequest() {
-        return JSON.stringify(this.request);
+        return this.request ? JSON.stringify(this.request) : null;
     }
 
     @wire(getDynamicData, { request: '$jsonRequest' })
@@ -67,6 +66,36 @@ export default class DataWrapper extends LightningElement {
             .then(() => this.refreshData());
     }
 
+    handleObjectChange(event) {
+        this.objectName = event.target.value;
+    }
+
+    handleFieldChange(event) {
+        this.fieldInput = event.target.value;
+    }
+
+    handleWhereChange(event) {
+        this.whereClause = event.target.value;
+    }
+
+    handleLimitChange(event) {
+        this.limitSize = parseInt(event.target.value, 10);
+    }
+
+    // Load Button
+    loadData() {
+        if (!this.objectName || !this.fieldInput) {
+            this.showToast('Error', 'Object and Fields are required', 'error');
+            return;
+        }
+
+        this.request = {
+            objectName: this.objectName.trim(),
+            fields: this.fieldInput.split(',').map(f => f.trim()),
+            whereClause: this.whereClause,
+            limitSize: this.limitSize
+        };
+    }
     async refreshData() {
         await refreshApex(this.wiredResult);
 
@@ -74,11 +103,15 @@ export default class DataWrapper extends LightningElement {
         if (child) {
             child.refreshTable(this.data);
         }
+        this.showToast('Success', 'Data refreshed Successfully', 'success');
+    }
+
+    showToast(title, message, variant) {
         this.dispatchEvent(
             new ShowToastEvent({
-                title: 'Refreshed',
-                message: 'Data refreshed successfully',
-                variant: 'success'
+                title,
+                message,
+                variant
             })
         );
     }
