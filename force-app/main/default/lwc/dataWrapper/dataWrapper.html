@@ -12,12 +12,15 @@
                 </lightning-combobox>
             </div>
 
-            <div class="slds-col slds-size_1-of-2">
-                <lightning-input
-                    label="Fields (comma separated)"
-                    value={fieldInput}
-                    onchange={handleFieldChange}>
-                </lightning-input>
+            <div class="slds-col slds-size_1-of-1">
+                <lightning-dual-listbox
+                    label="Select Fields"
+                    source-label="Available Fields"
+                    selected-label="Selected Fields"
+                    options={fieldOptions}
+                    value={selectedFields}
+                    onchange={handleFieldSelection}>
+                </lightning-dual-listbox>
             </div>
 
             <div class="slds-col slds-size_1-of-2">

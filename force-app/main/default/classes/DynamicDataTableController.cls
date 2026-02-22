@@ -69,7 +69,16 @@ public with sharing class DynamicDataTableController {
             throw new AuraHandledException('No valid fields found for ' + parsedRequest.objectName);
         }
 
-        if (!validFields.contains('Id')) {
+        Boolean idExists = false;
+
+        for (String field : validFields) {
+            if (field.equalsIgnoreCase('Id')) {
+                idExists = true;
+                break;
+            }
+        }
+
+        if (!idExists) {
             validFields.add('Id');
         }
         
@@ -134,6 +143,39 @@ public with sharing class DynamicDataTableController {
 
         
         return objectList;
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static List<Map<String, String>> getObjectFields(String objectName) {
+    
+        if (String.isBlank(objectName)) {
+            throw new AuraHandledException('Object name required');
+        }
+    
+        Map<String, Schema.SObjectType> globalMap = Schema.getGlobalDescribe();
+    
+        if (!globalMap.containsKey(objectName)) {
+            throw new AuraHandledException('Invalid object name');
+        }
+    
+        Map<String, Schema.SObjectField> fieldMap =
+            globalMap.get(objectName).getDescribe().fields.getMap();
+    
+        List<Map<String, String>> fieldList = new List<Map<String, String>>();
+    
+        for (String fieldName : fieldMap.keySet()) {
+            Schema.DescribeFieldResult describeField = fieldMap.get(fieldName).getDescribe();
+    
+            if (describeField.isAccessible()) {
+                fieldList.add(new Map<String, String>{
+                    'label' => describeField.getLabel(),
+                    'value' => fieldName
+                });
+            }
+        }
+    
+        
+        return fieldList;
     }
 
     @AuraEnabled

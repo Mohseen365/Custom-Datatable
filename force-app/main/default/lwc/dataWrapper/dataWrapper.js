@@ -6,11 +6,14 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { refreshApex } from '@salesforce/apex';
 import bulkUpdate from '@salesforce/apex/DynamicDataTableController.bulkUpdate';
 import getAllObjects from '@salesforce/apex/DynamicDataTableController.getAllObjects';
+import getObjectFields from '@salesforce/apex/DynamicDataTableController.getObjectFields';
 
 export default class DataWrapper extends LightningElement {
     @track data;
     @track columns;
     @track error;
+    @track fieldOptions = [];
+    @track selectedFields = [];
 
     wiredResult;
 
@@ -41,6 +44,16 @@ export default class DataWrapper extends LightningElement {
         }
     }
 
+    @wire(getObjectFields, { objectName: '$objectName' })
+    wiredFields({ data, error }) {
+        if (data) {
+            this.fieldOptions = data;
+            this.selectedFields = []; // reset when object changes
+        } else if (error) {
+            console.error('Error loading fields', error);
+        }
+    }
+
     @wire(getDynamicData, { request: '$jsonRequest' })
     wiredData(result) {
         this.wiredResult = result;
@@ -56,8 +69,9 @@ export default class DataWrapper extends LightningElement {
             this.error = undefined;
 
         } else if (result.error) {
-            this.error = result.error;
+            this.error = this.reduceErrors(result.error).join(', ');
             this.data = undefined;
+            this.columns = undefined;
         }
     }
 
@@ -87,8 +101,8 @@ export default class DataWrapper extends LightningElement {
         this.objectName = event.target.value;
     }
 
-    handleFieldChange(event) {
-        this.fieldInput = event.target.value;
+    handleFieldSelection(event) {
+        this.selectedFields = event.detail.value;
     }
 
     handleWhereChange(event) {
@@ -101,18 +115,42 @@ export default class DataWrapper extends LightningElement {
 
     // Load Button
     loadData() {
-        if (!this.objectName || !this.fieldInput) {
-            this.showToast('Error', 'Object and Fields are required', 'error');
+        if (!this.objectName || this.selectedFields.length === 0) {
+            this.showToast('Error', 'Select object and at least one field', 'error');
             return;
         }
 
         this.request = {
-            objectName: this.objectName.trim(),
-            fields: this.fieldInput.split(',').map(f => f.trim()),
+            objectName: this.objectName,
+            fields: this.selectedFields,
             whereClause: this.whereClause,
             limitSize: this.limitSize
         };
     }
+    
+    reduceErrors(errors) {
+        if (!Array.isArray(errors)) {
+            errors = [errors];
+        }
+    
+        return (
+            errors
+                .filter(error => !!error)
+                .map(error => {
+                    if (Array.isArray(error.body)) {
+                        return error.body.map(e => e.message);
+                    } else if (error.body && typeof error.body.message === 'string') {
+                        return error.body.message;
+                    } else if (typeof error.message === 'string') {
+                        return error.message;
+                    }
+                    return error.statusText;
+                })
+                .reduce((prev, curr) => prev.concat(curr), [])
+                .filter(message => !!message)
+        );
+    }
+
     async refreshData() {
         await refreshApex(this.wiredResult);
 
