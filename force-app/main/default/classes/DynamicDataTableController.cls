@@ -114,13 +114,25 @@ public with sharing class DynamicDataTableController {
         return response;
     }
 
-    public class PicklistOption {
+    public class PicklistOption implements Comparable {
+
         @AuraEnabled public String label;
         @AuraEnabled public String value;
     
         public PicklistOption(String label, String value) {
             this.label = label;
             this.value = value;
+        }
+    
+        public Integer compareTo(Object compareTo) {
+            PicklistOption other = (PicklistOption) compareTo;
+        
+            if (other == null) return 1;
+            if (this.label == null && other.label == null) return 0;
+            if (this.label == null) return -1;
+            if (other.label == null) return 1;
+        
+            return this.label.toLowerCase().compareTo(other.label.toLowerCase());
         }
     }
 
@@ -141,12 +153,12 @@ public with sharing class DynamicDataTableController {
             }
         }
 
-        
+        objectList.sort();
         return objectList;
     }
 
     @AuraEnabled(cacheable=true)
-    public static List<Map<String, String>> getObjectFields(String objectName) {
+    public static List<PicklistOption> getObjectFields(String objectName) {
     
         if (String.isBlank(objectName)) {
             throw new AuraHandledException('Object name required');
@@ -158,23 +170,40 @@ public with sharing class DynamicDataTableController {
             throw new AuraHandledException('Invalid object name');
         }
     
+        Schema.DescribeSObjectResult objDescribe =
+            globalMap.get(objectName).getDescribe();
+    
+        // Ensure object is queryable
+        if (!objDescribe.isQueryable()) {
+            throw new AuraHandledException('Object is not queryable');
+        }
+    
         Map<String, Schema.SObjectField> fieldMap =
-            globalMap.get(objectName).getDescribe().fields.getMap();
+            objDescribe.fields.getMap();
     
-        List<Map<String, String>> fieldList = new List<Map<String, String>>();
+        List<PicklistOption> fieldList = new List<PicklistOption>();
     
-        for (String fieldName : fieldMap.keySet()) {
-            Schema.DescribeFieldResult describeField = fieldMap.get(fieldName).getDescribe();
+        for (Schema.SObjectField field : fieldMap.values()) {
     
-            if (describeField.isAccessible()) {
-                fieldList.add(new Map<String, String>{
-                    'label' => describeField.getLabel(),
-                    'value' => fieldName
-                });
+            Schema.DescribeFieldResult describeField = field.getDescribe();
+    
+            if (describeField.isAccessible()
+                && !describeField.isCalculated()
+                && !describeField.isAutoNumber()
+                && describeField.getType() != Schema.DisplayType.Address
+                && describeField.getType() != Schema.DisplayType.Location) {
+    
+                fieldList.add(
+                    new PicklistOption(
+                        describeField.getLabel(),
+                        describeField.getName()
+                    )
+                );
             }
         }
     
-        
+        fieldList.sort();
+    
         return fieldList;
     }
 
