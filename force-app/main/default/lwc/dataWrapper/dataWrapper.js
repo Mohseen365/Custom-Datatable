@@ -15,6 +15,29 @@ export default class DataWrapper extends LightningElement {
     @track fieldOptions = [];
     @track selectedFields = [];
 
+    @track filters = [
+        { id: 1, field: '', operator: '', value: '' }
+    ];
+    
+    filterCounter = 2;
+    logicType = 'AND';
+
+    operators = [
+        { label: 'Equals', value: '=' },
+        { label: 'Not Equal', value: '!=' },
+        { label: 'Greater Than', value: '>' },
+        { label: 'Less Than', value: '<' },
+        { label: 'Like', value: 'LIKE' },
+        { label: 'Contains', value: 'CONTAINS' },
+        { label: 'Starts With', value: 'STARTS_WITH' },
+        { label: 'Ends With', value: 'ENDS_WITH' }
+    ];
+
+    logicOptions = [
+        { label: 'Match All Conditions (AND)', value: 'AND' },
+        { label: 'Match Any Condition (OR)', value: 'OR' }
+    ];
+
     wiredResult;
 
     objectName = 'Account';
@@ -113,21 +136,105 @@ export default class DataWrapper extends LightningElement {
         this.limitSize = parseInt(event.target.value, 10);
     }
 
-    // Load Button
+
+    addFilter() {
+        this.filters = [
+            ...this.filters,
+            { id: this.filterCounter++, field: '', operator: '', value: '' }
+        ];
+    }
+    
+    removeFilter(event) {
+        const id = parseInt(event.target.dataset.id, 10);
+        this.filters = this.filters.filter(f => f.id !== id);
+    }
+    
+    handleFilterField(event) {
+        const id = parseInt(event.target.dataset.id, 10);
+        this.updateFilter(id, 'field', event.detail.value);
+    }
+    
+    handleFilterOperator(event) {
+        const id = parseInt(event.target.dataset.id, 10);
+        this.updateFilter(id, 'operator', event.detail.value);
+    }
+    
+    handleFilterValue(event) {
+        const id = parseInt(event.target.dataset.id, 10);
+        this.updateFilter(id, 'value', event.target.value);
+    }
+    
+    handleLogicChange(event) {
+        this.logicType = event.detail.value;
+    }
+
+    updateFilter(id, key, value) {
+        this.filters = this.filters.map(f => {
+            if (f.id === id) {
+                return { ...f, [key]: value };
+            }
+            return f;
+        });
+    }    
+
+    buildWhereClause() {
+
+        const validConditions = this.filters
+            .filter(f => f.field && f.operator && f.value !== undefined && f.value !== '')
+            .map(f => {
+                let value = f.value;
+    
+                // Text operators
+                if (f.operator === 'CONTAINS') {
+                    return `${f.field} LIKE '%${value}%'`;
+                }
+    
+                if (f.operator === 'STARTS_WITH') {
+                    return `${f.field} LIKE '${value}%'`;
+                }
+    
+                if (f.operator === 'ENDS_WITH') {
+                    return `${f.field} LIKE '%${value}'`;
+                }
+    
+                // LIKE operator fallback
+                if (f.operator === 'LIKE') {
+                    return `${f.field} LIKE '%${value}%'`;
+                }
+    
+                // Handle numbers properly
+                if (!isNaN(value)) {
+                    return `${f.field} ${f.operator} ${value}`;
+                }
+    
+                // Default: treat as string
+                return `${f.field} ${f.operator} '${value}'`;
+            });
+    
+        if (validConditions.length === 0) {
+            return '';
+        }
+    
+        return validConditions.join(` ${this.logicType} `);
+    }
+
     loadData() {
+
         if (!this.objectName || this.selectedFields.length === 0) {
-            this.showToast('Error', 'Select object and at least one field', 'error');
+            this.showToast('Error', 'Select object and fields', 'error');
             return;
         }
-
+    
+        const where = this.buildWhereClause();
+    
         this.request = {
             objectName: this.objectName,
             fields: this.selectedFields,
-            whereClause: this.whereClause,
+            whereClause: where ? where : null,
             limitSize: this.limitSize
         };
     }
-    
+
     reduceErrors(errors) {
         if (!Array.isArray(errors)) {
             errors = [errors];

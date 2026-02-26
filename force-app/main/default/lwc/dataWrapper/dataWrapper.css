@@ -1,0 +1,9 @@
+.filter-section {
+    border-radius: 8px;
+}
+
+.filter-card {
+    border-left: 4px solid #1b96ff;
+    border-radius: 6px;
+    background: #f8f9fb;
+}

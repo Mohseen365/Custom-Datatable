@@ -11,7 +11,16 @@
                     onchange={handleObjectChange}>
                 </lightning-combobox>
             </div>
-
+            
+            <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                    type="number"
+                    label="Limit"
+                    value={limitSize}
+                    onchange={handleLimitChange}>
+                </lightning-input>
+            </div>
+            
             <div class="slds-col slds-size_1-of-1">
                 <lightning-dual-listbox
                     label="Select Fields"
@@ -23,22 +32,85 @@
                 </lightning-dual-listbox>
             </div>
 
-            <div class="slds-col slds-size_1-of-2">
-                <lightning-input
-                    label="Where Clause (Optional)"
-                    value={whereClause}
-                    onchange={handleWhereChange}>
-                </lightning-input>
+            <div class="slds-box slds-m-top_large filter-section">
+
+                <div class="slds-text-heading_small slds-m-bottom_medium">
+                    Filter Records
+                </div>
+
+                <div class="slds-m-bottom_large">
+                    <lightning-radio-group
+                        name="logicType"
+                        label="Condition Logic"
+                        options={logicOptions}
+                        value={logicType}
+                        onchange={handleLogicChange}>
+                    </lightning-radio-group>
+                </div>
+
+                <div class="slds-grid slds-grid_vertical slds-gutters_medium">
+
+                    <template for:each={filters} for:item="filter">
+                        <div key={filter.id} class="slds-box slds-m-bottom_medium filter-card">
+
+                            <div class="slds-grid slds-wrap slds-gutters_medium">
+
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
+                                    <lightning-combobox
+                                        label="Field"
+                                        value={filter.field}
+                                        options={fieldOptions}
+                                        data-id={filter.id}
+                                        onchange={handleFilterField}>
+                                    </lightning-combobox>
+                                </div>
+
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_3-of-12">
+                                    <lightning-combobox
+                                        label="Operator"
+                                        value={filter.operator}
+                                        options={operators}
+                                        data-id={filter.id}
+                                        onchange={handleFilterOperator}>
+                                    </lightning-combobox>
+                                </div>
+
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
+                                    <lightning-input
+                                        label="Value"
+                                        value={filter.value}
+                                        data-id={filter.id}
+                                        onchange={handleFilterValue}>
+                                    </lightning-input>
+                                </div>
+
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-12 slds-align_absolute-center">
+                                    <lightning-button-icon
+                                        icon-name="utility:close"
+                                        alternative-text="Remove"
+                                        variant="bare"
+                                        data-id={filter.id}
+                                        onclick={removeFilter}>
+                                    </lightning-button-icon>
+                                </div>
+
+                            </div>
+                        </div>
+                    </template>
+
+                </div>
+
+                <div class="slds-m-top_medium">
+                    <lightning-button
+                        label="Add Condition"
+                        icon-name="utility:add"
+                        variant="neutral"
+                        onclick={addFilter}>
+                    </lightning-button>
+                </div>
+
             </div>
-            
-            <div class="slds-col slds-size_1-of-2">
-                <lightning-input
-                    type="number"
-                    label="Limit"
-                    value={limitSize}
-                    onchange={handleLimitChange}>
-                </lightning-input>
-            </div>
+
             
             <div class="slds-col slds-size_1-of-1 slds-m-top_small">
                 <lightning-button
