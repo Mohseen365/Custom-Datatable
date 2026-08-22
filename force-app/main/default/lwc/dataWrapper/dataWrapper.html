@@ -121,12 +121,18 @@
             </div>
 
             
-            <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+            <div class="slds-col slds-size_1-of-1 slds-m-top_small slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
                 <lightning-button
                     label="Load Data"
                     variant="brand"
+                    icon-name="utility:play"
                     onclick={loadData}>
                 </lightning-button>
+                <template if:true={data}>
+                    <div class="slds-badge slds-theme_success">
+                        Records Loaded: {data.length}
+                    </div>
+                </template>
             </div>
 
         </div>

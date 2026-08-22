@@ -112,6 +112,10 @@ describe('c-data-wrapper', () => {
         const dataTable = element.shadowRoot.querySelector('c-data-table');
         expect(dataTable).not.toBeNull();
         expect(dataTable.records.length).toBe(1);
+
+        const badge = element.shadowRoot.querySelector('.slds-badge');
+        expect(badge).not.toBeNull();
+        expect(badge.textContent).toContain('Records Loaded: 1');
     });
 
     it('adds and clears filter conditions when buttons are clicked', async () => {

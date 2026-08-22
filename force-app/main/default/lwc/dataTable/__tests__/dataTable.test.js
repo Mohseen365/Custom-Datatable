@@ -77,4 +77,21 @@ describe('c-data-table', () => {
         expect(noDataMsg).not.toBeNull();
         expect(noDataMsg.textContent.trim()).toBe('No records found');
     });
+
+    it('renders export CSV button', async () => {
+        const element = createElement('c-data-table', {
+            is: DataTable
+        });
+        element.columns = MOCK_COLUMNS;
+        element.records = MOCK_RECORDS;
+        element.objectName = 'Account';
+
+        document.body.appendChild(element);
+
+        await Promise.resolve();
+
+        const buttons = Array.from(element.shadowRoot.querySelectorAll('lightning-button'));
+        const exportBtn = buttons.find(btn => btn.label === 'Export CSV');
+        expect(exportBtn).not.toBeUndefined();
+    });
 });

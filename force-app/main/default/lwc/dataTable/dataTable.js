@@ -263,6 +263,51 @@ export default class DataTable extends NavigationMixin(LightningElement) {
         this.editFields = this.columns || [];
         this.showCreateModal = true;
     }
+
+    exportToCSV() {
+        const recordsToExport = this.selectedRows.length > 0 ? this.selectedRows : this.filteredRecords;
+        if (!recordsToExport || recordsToExport.length === 0) {
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Export Warning',
+                    message: 'No records available to export.',
+                    variant: 'warning'
+                })
+            );
+            return;
+        }
+
+        const cols = this.columns || [];
+        const headers = cols.map(c => c.label || c.fieldName);
+        const fieldNames = cols.map(c => c.fieldName);
+
+        let csvContent = headers.join(',') + '\n';
+
+        recordsToExport.forEach(row => {
+            const rowValues = fieldNames.map(field => {
+                let val = row[field] !== undefined && row[field] !== null ? row[field] : '';
+                val = String(val).replace(/"/g, '""');
+                return `"${val}"`;
+            });
+            csvContent += rowValues.join(',') + '\n';
+        });
+
+        const downloadElement = document.createElement('a');
+        downloadElement.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        downloadElement.target = '_self';
+        downloadElement.download = `${this.objectName || 'Export'}_Records.csv`;
+        document.body.appendChild(downloadElement);
+        downloadElement.click();
+        document.body.removeChild(downloadElement);
+
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: 'Success',
+                message: `Exported ${recordsToExport.length} record(s) to CSV`,
+                variant: 'success'
+            })
+        );
+    }
     
     closeCreateModal() {
         this.showCreateModal = false;

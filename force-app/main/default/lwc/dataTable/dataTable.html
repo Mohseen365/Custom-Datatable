@@ -62,13 +62,23 @@
                         </lightning-button>
                     </div>
             
-                    <div>
-                        <lightning-button 
-                            label="New Record"
-                            variant="brand"
-                            icon-name="utility:add"
-                            onclick={openNewModal}>
-                        </lightning-button>
+                    <div class="slds-grid slds-grid_vertical-align-center slds-gutters_x-small">
+                        <div class="slds-col">
+                            <lightning-button
+                                label="Export CSV"
+                                variant="neutral"
+                                icon-name="utility:download"
+                                onclick={exportToCSV}>
+                            </lightning-button>
+                        </div>
+                        <div class="slds-col">
+                            <lightning-button
+                                label="New Record"
+                                variant="brand"
+                                icon-name="utility:add"
+                                onclick={openNewModal}>
+                            </lightning-button>
+                        </div>
                     </div>
             
                 </div>

@@ -222,39 +222,39 @@ export default class DataWrapper extends LightningElement {
         const validConditions = this.filters
             .filter(f => f.field && f.operator && f.value !== undefined && f.value !== '')
             .map(f => {
-                let value = f.value;
-    
+                let value = String(f.value).replace(/'/g, "\\'");
+
                 // Text operators
                 if (f.operator === 'CONTAINS') {
                     return `${f.field} LIKE '%${value}%'`;
                 }
-    
+
                 if (f.operator === 'STARTS_WITH') {
                     return `${f.field} LIKE '${value}%'`;
                 }
-    
+
                 if (f.operator === 'ENDS_WITH') {
                     return `${f.field} LIKE '%${value}'`;
                 }
-    
+
                 // LIKE operator fallback
                 if (f.operator === 'LIKE') {
                     return `${f.field} LIKE '%${value}%'`;
                 }
-    
-                // Handle numbers properly
-                if (!isNaN(value)) {
+
+                // Handle numeric/boolean values without quotes if applicable
+                if (!isNaN(value) && value.trim() !== '') {
                     return `${f.field} ${f.operator} ${value}`;
                 }
-    
+
                 // Default: treat as string
                 return `${f.field} ${f.operator} '${value}'`;
             });
-    
+
         if (validConditions.length === 0) {
             return '';
         }
-    
+
         return validConditions.join(` ${this.logicType} `);
     }
 
