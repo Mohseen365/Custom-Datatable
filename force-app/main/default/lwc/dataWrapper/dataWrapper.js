@@ -14,6 +14,7 @@ export default class DataWrapper extends LightningElement {
     @track error;
     @track fieldOptions = [];
     @track selectedFields = [];
+    @track isLoading = false;
 
     @track filters = [
         { id: 1, field: '', operator: '', value: '' }
@@ -80,9 +81,10 @@ export default class DataWrapper extends LightningElement {
     @wire(getDynamicData, { request: '$jsonRequest' })
     wiredData(result) {
         this.wiredResult = result;
+        this.isLoading = false;
 
         if (result.data) {
-            this.columns = result.data.columns.map(col => ({
+            this.columns = (result.data.columns || []).map(col => ({
                 ...col,
                 sortable: true,
                 editable: true 
@@ -100,24 +102,55 @@ export default class DataWrapper extends LightningElement {
 
     
     handleBulkUpdate(event) {
+        this.isLoading = true;
         bulkUpdate({
             objectName: this.request.objectName,
             recordIds: event.detail.recordIds,
             values: event.detail.values
         })
-        .then(() => this.refreshData());
+        .then(() => {
+            this.showToast('Success', 'Records updated successfully', 'success');
+            return this.refreshData();
+        })
+        .catch(error => {
+            this.showToast('Error', this.reduceErrors(error).join(', '), 'error');
+        })
+        .finally(() => {
+            this.isLoading = false;
+        });
     }
+
     handleCreate(event) {
+        this.isLoading = true;
         insertRecord({
             objectName: this.request.objectName,
             fields: event.detail
         })
-        .then(() => this.refreshData());
+        .then(() => {
+            this.showToast('Success', 'Record created successfully', 'success');
+            return this.refreshData();
+        })
+        .catch(error => {
+            this.showToast('Error', this.reduceErrors(error).join(', '), 'error');
+        })
+        .finally(() => {
+            this.isLoading = false;
+        });
     }
     
     handleDelete(event) {
+        this.isLoading = true;
         deleteRecordById({ recordId: event.detail })
-            .then(() => this.refreshData());
+            .then(() => {
+                this.showToast('Success', 'Record deleted successfully', 'success');
+                return this.refreshData();
+            })
+            .catch(error => {
+                this.showToast('Error', this.reduceErrors(error).join(', '), 'error');
+            })
+            .finally(() => {
+                this.isLoading = false;
+            });
     }
 
     handleObjectChange(event) {
@@ -147,6 +180,13 @@ export default class DataWrapper extends LightningElement {
     removeFilter(event) {
         const id = parseInt(event.target.dataset.id, 10);
         this.filters = this.filters.filter(f => f.id !== id);
+    }
+
+    clearFilters() {
+        this.filters = [
+            { id: 1, field: '', operator: '', value: '' }
+        ];
+        this.filterCounter = 2;
     }
     
     handleFilterField(event) {
@@ -221,11 +261,12 @@ export default class DataWrapper extends LightningElement {
     loadData() {
 
         if (!this.objectName || this.selectedFields.length === 0) {
-            this.showToast('Error', 'Select object and fields', 'error');
+            this.showToast('Error', 'Select an object and at least one field', 'error');
             return;
         }
     
         const where = this.buildWhereClause();
+        this.isLoading = true;
     
         this.request = {
             objectName: this.objectName,

@@ -150,22 +150,38 @@
                 <div class="slds-backdrop slds-backdrop_open"></div>
             </template>
             
-            <div class="slds-m-top_small slds-align_absolute-center">
-                <lightning-button
-                    label="Previous"
-                    onclick={handlePrevious}
-                    disabled={disablePrevious}
-                    class="slds-m-right_x-small">
-                </lightning-button>
+            <div class="slds-m-top_medium slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                <div class="slds-col slds-size_1-of-3">
+                    <lightning-combobox
+                        name="pageSize"
+                        label="Page Size"
+                        variant="label-hidden"
+                        value={pageSize}
+                        options={pageSizeOptions}
+                        onchange={handlePageSizeChange}>
+                    </lightning-combobox>
+                </div>
+                <div class="slds-col slds-grid slds-grid_align-center slds-grid_vertical-align-center">
+                    <lightning-button
+                        label="Previous"
+                        icon-name="utility:chevronleft"
+                        onclick={handlePrevious}
+                        disabled={disablePrevious}
+                        class="slds-m-right_x-small">
+                    </lightning-button>
 
-                <span class="slds-m-horizontal_small">{pageInfo}</span>
+                    <span class="slds-badge slds-m-horizontal_small">{pageInfo}</span>
 
-                <lightning-button
-                    label="Next"
-                    onclick={handleNext}
-                    disabled={disableNext}
-                    class="slds-m-left_x-small">
-                </lightning-button>
+                    <lightning-button
+                        label="Next"
+                        icon-name="utility:chevronright"
+                        icon-position="right"
+                        onclick={handleNext}
+                        disabled={disableNext}
+                        class="slds-m-left_x-small">
+                    </lightning-button>
+                </div>
+                <div class="slds-col slds-size_1-of-3"></div>
             </div>
         </template>
     </div>
