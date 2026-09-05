@@ -82,21 +82,26 @@ public with sharing class DynamicDataTableController {
             validFields.add('Id');
         }
         
-        String soql = 'SELECT ' + String.join(validFields, ',') + ' FROM ' + parsedRequest.objectName + ' WITH SECURITY_ENFORCED';
+        String sanitizedObjectName = String.escapeSingleQuotes(parsedRequest.objectName);
+        String soql = 'SELECT ' + String.join(validFields, ',') + ' FROM ' + sanitizedObjectName + ' WITH SECURITY_ENFORCED';
 
         if (!String.isBlank(parsedRequest.whereClause)) {
             soql += ' WHERE ' + parsedRequest.whereClause;
         }
 
-        if (parsedRequest.limitSize != null && parsedRequest.limitSize > 0) {
-            soql += ' LIMIT ' + parsedRequest.limitSize;
-        } else {
-            soql  += ' LIMIT 200';
-        }
+        Integer limitVal = (parsedRequest.limitSize != null && parsedRequest.limitSize > 0)
+            ? Math.min(parsedRequest.limitSize, 2000)
+            : 200;
+        soql += ' LIMIT ' + limitVal;
 
         System.debug('SOQL Query: ' + soql);
 
-        List<SObject> records = Database.query(soql);
+        List<SObject> records;
+        try {
+            records = Database.query(soql);
+        } catch (Exception e) {
+            throw new AuraHandledException('Error executing query: ' + e.getMessage());
+        }
 
         List<Map<String, Object>> dataList = new List<Map<String, Object>>();
         for (SObject s : records) {
@@ -209,34 +214,95 @@ public with sharing class DynamicDataTableController {
 
     @AuraEnabled
     public static Id insertRecord(String objectName, Map<String, Object> fields) {
-        SObject obj = Schema.getGlobalDescribe().get(objectName).newSObject();
-        for (String key : fields.keySet()) {
-            obj.put(key, fields.get(key));
+        if (String.isBlank(objectName)) {
+            throw new AuraHandledException('Object name is required.');
         }
+
+        Schema.SObjectType targetType = Schema.getGlobalDescribe().get(objectName);
+        if (targetType == null) {
+            throw new AuraHandledException('Invalid object name: ' + objectName);
+        }
+
+        Schema.DescribeSObjectResult describe = targetType.getDescribe();
+        if (!describe.isCreateable()) {
+            throw new AuraHandledException('Create access denied for object: ' + objectName);
+        }
+
+        SObject obj = targetType.newSObject();
+        Map<String, Schema.SObjectField> fieldMap = describe.fields.getMap();
+
+        if (fields != null) {
+            for (String key : fields.keySet()) {
+                if (fieldMap.containsKey(key)) {
+                    Schema.DescribeFieldResult fieldDescribe = fieldMap.get(key).getDescribe();
+                    if (fieldDescribe.isCreateable()) {
+                        obj.put(key, fields.get(key));
+                    }
+                }
+            }
+        }
+
         insert obj;
         return obj.Id;
     }
 
-
     @AuraEnabled
     public static void deleteRecordById(Id recordId) {
-        if (recordId == null) return;
+        if (recordId == null) {
+            throw new AuraHandledException('Record ID is required.');
+        }
 
-        delete recordId.getSObjectType().newSObject(recordId);
+        Schema.SObjectType targetType = recordId.getSObjectType();
+        Schema.DescribeSObjectResult describe = targetType.getDescribe();
+
+        if (!describe.isDeletable()) {
+            throw new AuraHandledException('Delete access denied for object: ' + describe.getName());
+        }
+
+        delete targetType.newSObject(recordId);
     }
+
     @AuraEnabled
     public static void bulkUpdate(String objectName, List<Id> recordIds, Map<String, Object> values) {
+        if (String.isBlank(objectName)) {
+            throw new AuraHandledException('Object name is required.');
+        }
+
+        if (recordIds == null || recordIds.isEmpty()) {
+            throw new AuraHandledException('No record IDs provided.');
+        }
+
+        Schema.SObjectType targetType = Schema.getGlobalDescribe().get(objectName);
+        if (targetType == null) {
+            throw new AuraHandledException('Invalid object name: ' + objectName);
+        }
+
+        Schema.DescribeSObjectResult describe = targetType.getDescribe();
+        if (!describe.isUpdateable()) {
+            throw new AuraHandledException('Update access denied for object: ' + objectName);
+        }
+
+        Map<String, Schema.SObjectField> fieldMap = describe.fields.getMap();
         List<SObject> updates = new List<SObject>();
 
         for (Id recordId : recordIds) {
-            SObject obj = Schema.getGlobalDescribe().get(objectName).newSObject(recordId);
-            for (String field : values.keySet()) {
-                obj.put(field, values.get(field));
+            SObject obj = targetType.newSObject(recordId);
+            if (values != null) {
+                for (String field : values.keySet()) {
+                    if (fieldMap.containsKey(field)) {
+                        Schema.DescribeFieldResult fieldDescribe = fieldMap.get(field).getDescribe();
+                        if (fieldDescribe.isUpdateable()) {
+                            obj.put(field, values.get(field));
+                        }
+                    }
+                }
             }
             updates.add(obj);
         }
 
-        update updates;
+        if (!updates.isEmpty()) {
+            update updates;
+        }
     }
 
     private static String getLwcFieldType(Schema.DescribeFieldResult fieldDescribe) {
@@ -274,6 +340,14 @@ public with sharing class DynamicDataTableController {
             throw new AuraHandledException('Invalid object name: ' + objectName);
         }
 
+        Schema.SObjectType targetType = globalMap.get(objectName);
+        Schema.DescribeSObjectResult describe = targetType.getDescribe();
+
+        if (!describe.isUpdateable()) {
+            throw new AuraHandledException('Update access denied for object: ' + objectName);
+        }
+
+        Map<String, Schema.SObjectField> fieldMap = describe.fields.getMap();
         List<SObject> updates = new List<SObject>();
 
         for (Map<String, Object> rec : records) {
@@ -288,11 +362,14 @@ public with sharing class DynamicDataTableController {
                 continue;
             }
 
-            SObject obj = globalMap.get(objectName).newSObject(recordId);
+            SObject obj = targetType.newSObject(recordId);
 
             for (String key : rec.keySet()) {
-                if (key != 'Id' && rec.get(key) != null) {
-                    obj.put(key, rec.get(key));
+                if (key != 'Id' && rec.get(key) != null && fieldMap.containsKey(key)) {
+                    Schema.DescribeFieldResult fieldDescribe = fieldMap.get(key).getDescribe();
+                    if (fieldDescribe.isUpdateable()) {
+                        obj.put(key, rec.get(key));
+                    }
                 }
             }
 

@@ -5,7 +5,18 @@ import { NavigationMixin } from 'lightning/navigation';
 import saveRecords from '@salesforce/apex/DynamicDataTableController.saveRecords';
 
 export default class DataTable extends NavigationMixin(LightningElement) {
-    @api records;
+    _records = [];
+    @api
+    get records() {
+        return this._records;
+    }
+    set records(value) {
+        this._records = value || [];
+        this.filteredRecords = [...this._records];
+        this.currentPage = 1;
+        this.setPagination();
+    }
+
     @api columns;
     @api objectName;
 
@@ -32,14 +43,11 @@ export default class DataTable extends NavigationMixin(LightningElement) {
     @api
     refreshTable(data) {
         this.records = data;
-        this.filteredRecords = [...data];
-        this.currentPage = 1;
-        this.setPagination();
     }
 
     connectedCallback() {
-        if (this.records) {
-            this.filteredRecords = [...this.records];
+        if (this._records && this._records.length > 0) {
+            this.filteredRecords = [...this._records];
             this.setPagination();
         }
     }
@@ -55,9 +63,17 @@ export default class DataTable extends NavigationMixin(LightningElement) {
         return `Page ${this.currentPage} of ${this.totalPages}`;
     }
 
+    pageSizeOptions = [
+        { label: '5 records / page', value: '5' },
+        { label: '10 records / page', value: '10' },
+        { label: '25 records / page', value: '25' },
+        { label: '50 records / page', value: '50' }
+    ];
+
     get computedColumns() {
+        const cols = this.columns || [];
         return [
-            ...this.columns,
+            ...cols,
             {
                 type: 'action',
                 typeAttributes: {
@@ -69,6 +85,12 @@ export default class DataTable extends NavigationMixin(LightningElement) {
                 }
             }
         ];
+    }
+
+    handlePageSizeChange(event) {
+        this.pageSize = parseInt(event.detail.value, 10);
+        this.currentPage = 1;
+        this.setPagination();
     }
 
     get disableBulk() {
@@ -98,7 +120,7 @@ export default class DataTable extends NavigationMixin(LightningElement) {
     }
     openBulkModal() {
         this.bulkValues = {};
-        this.editFields = this.columns;
+        this.editFields = this.columns || [];
         this.showBulkModal = true;
     }
     
@@ -238,8 +260,53 @@ export default class DataTable extends NavigationMixin(LightningElement) {
 
     openNewModal() {
         this.newRecord = {};
-        this.editFields = this.columns;
+        this.editFields = this.columns || [];
         this.showCreateModal = true;
+    }
+
+    exportToCSV() {
+        const recordsToExport = this.selectedRows.length > 0 ? this.selectedRows : this.filteredRecords;
+        if (!recordsToExport || recordsToExport.length === 0) {
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Export Warning',
+                    message: 'No records available to export.',
+                    variant: 'warning'
+                })
+            );
+            return;
+        }
+
+        const cols = this.columns || [];
+        const headers = cols.map(c => c.label || c.fieldName);
+        const fieldNames = cols.map(c => c.fieldName);
+
+        let csvContent = headers.join(',') + '\n';
+
+        recordsToExport.forEach(row => {
+            const rowValues = fieldNames.map(field => {
+                let val = row[field] !== undefined && row[field] !== null ? row[field] : '';
+                val = String(val).replace(/"/g, '""');
+                return `"${val}"`;
+            });
+            csvContent += rowValues.join(',') + '\n';
+        });
+
+        const downloadElement = document.createElement('a');
+        downloadElement.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        downloadElement.target = '_self';
+        downloadElement.download = `${this.objectName || 'Export'}_Records.csv`;
+        document.body.appendChild(downloadElement);
+        downloadElement.click();
+        document.body.removeChild(downloadElement);
+
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: 'Success',
+                message: `Exported ${recordsToExport.length} record(s) to CSV`,
+                variant: 'success'
+            })
+        );
     }
     
     closeCreateModal() {
